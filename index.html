@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Astra MultiAgent-Orchestrator</title>
+<style>
+  :root{
+    --bg:#0a0a0b;
+    --panel:#121214;
+    --panel-2:#17171a;
+    --border:#26262a;
+    --gold:#d4af6a;
+    --gold-soft:#8a7143;
+    --text:#eae7e0;
+    --muted:#8c8a86;
+    --ok:#5fbf82;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(212,175,106,0.06), transparent 40%),
+      radial-gradient(circle at 85% 100%, rgba(212,175,106,0.05), transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height:100vh;
+  }
+  header{
+    padding:36px 48px 24px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+  }
+  .brand{
+    font-family: 'Georgia', 'Times New Roman', serif;
+    letter-spacing:2px;
+  }
+  .brand small{
+    display:block;
+    color:var(--gold);
+    font-size:11px;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .brand h1{
+    margin:0;
+    font-size:28px;
+    font-weight:400;
+  }
+  .badge{
+    border:1px solid var(--gold-soft);
+    color:var(--gold);
+    padding:6px 14px;
+    border-radius:999px;
+    font-size:12px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+  main{
+    padding:36px 48px 64px;
+    max-width:1200px;
+    margin:0 auto;
+  }
+  .agents{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:18px;
+    margin-bottom:36px;
+  }
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:'';
+    position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+    opacity:.6;
+  }
+  .card h3{
+    margin:0 0 6px;
+    font-size:16px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);}
+  .card p{
+    margin:0;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.5;
+  }
+  .console{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:24px;
+  }
+  .console h2{
+    font-size:14px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin:0 0 16px;
+    font-weight:500;
+  }
+  .input-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  input[type=text]{
+    flex:1;
+    min-width:240px;
+    background:#0d0d0f;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:13px 16px;
+    border-radius:10px;
+    font-size:14px;
+    outline:none;
+  }
+  input[type=text]:focus{border-color:var(--gold-soft);}
+  button{
+    background:var(--gold);
+    color:#111;
+    border:none;
+    padding:13px 22px;
+    border-radius:10px;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:.5px;
+    cursor:pointer;
+    text-transform:uppercase;
+  }
+  button:hover{background:#e2c184;}
+  .presets{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+  }
+  .chip{
+    border:1px solid var(--border);
+    color:var(--muted);
+    padding:7px 12px;
+    border-radius:999px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .chip:hover{border-color:var(--gold-soft); color:var(--gold);}
+  .log{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    max-height:420px;
+    overflow-y:auto;
+  }
+  .entry{
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    background:#0d0d0f;
+    animation:fadein .35s ease;
+  }
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .entry .meta{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:8px;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+  }
+  .entry .meta span.route{color:var(--gold);}
+  .entry .out{font-size:13.5px; line-height:1.55; white-space:pre-wrap;}
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    padding:20px;
+    border-top:1px solid var(--border);
+  }
+  footer a{color:var(--gold); text-decoration:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <small>Astra AI · Internal Systems</small>
+    <h1>MultiAgent-Orchestrator</h1>
+  </div>
+  <div class="badge" id="modeBadge">● Demo Mode</div>
+</header>
+
+<main>
+  <section class="agents" id="agentGrid"></section>
+
+  <section class="console">
+    <h2>Task Console</h2>
+    <div class="input-row">
+      <input type="text" id="taskInput" placeholder="e.g. New lead: dental clinic, budget approved, wants demo this week" />
+      <button onclick="submitTask()">Dispatch</button>
+    </div>
+    <div class="presets">
+      <div class="chip" onclick="fill('New lead: HVAC company, budget approved, needs system ASAP')">Qualify a lead</div>
+      <div class="chip" onclick="fill('Customer says they were billed twice, wants a refund')">Support ticket</div>
+      <div class="chip" onclick="fill('Research this competitor: ServiceTitan, focus on pricing model')">Research request</div>
+    </div>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+
+<footer>
+  Astra MultiAgent-Orchestrator — routes tasks across specialist AI agents in real time. ·
+  <a href="https://github.com/" target="_blank">View on GitHub</a>
+</footer>
+
+<script>
+const agents = [
+  {name:"Customer Support Agent", desc:"Handles inbound questions, complaints & billing issues.", key:"customer_support"},
+  {name:"Lead Qualification Agent", desc:"Scores incoming leads on fit + urgency, recommends next action.", key:"lead_qualification"},
+  {name:"Research Agent", desc:"Pulls together competitor & market research on demand.", key:"research"},
+];
+
+const grid = document.getElementById('agentGrid');
+agents.forEach(a=>{
+  const el = document.createElement('div');
+  el.className='card';
+  el.innerHTML = `<h3><span class="dot"></span>${a.name}</h3><p>${a.desc}</p>`;
+  grid.appendChild(el);
+});
+
+function route(task){
+  const t = task.toLowerCase();
+  if(/lead|score|qualify|prospect/.test(t)) return "lead_qualification";
+  if(/research|competitor|company info|find out/.test(t)) return "research";
+  return "customer_support";
+}
+
+function runAgent(key, task){
+  const t = task.toLowerCase();
+  if(key === "lead_qualification"){
+    let score = 50;
+    if(/urgent|asap|this week|budget approved/.test(t)) score += 30;
+    if(/just looking|no budget|not sure/.test(t)) score -= 25;
+    if(/hvac|roofing|dental|law firm|clinic/.test(t)) score += 15;
+    score = Math.max(0, Math.min(100, score));
+    const action = score>=70 ? "Hot lead — book a demo call within 24 hours."
+                 : score>=40 ? "Warm lead — add to nurture sequence, follow up in 3 days."
+                 : "Low priority — add to long-term drip campaign.";
+    return `Lead score: ${score}/100. Recommended action: ${action}`;
+  }
+  if(key === "research"){
+    return `Research summary for: "${task}"\n- Industry snapshot compiled\n- Key competitors identified\n- Market segment estimated\n- Talking points prepared for outreach\n- Flagged for human review before pitch`;
+  }
+  // customer_support
+  if(/refund|cancel|billing|charge/.test(t)) return "I understand this is about billing. I've flagged this for our billing team — resolution within 24 hours.";
+  if(/down|not working|error|bug/.test(t)) return "Sorry about that. Can you share your device/browser? I've logged this and the team is looking into it.";
+  return "Thanks for reaching out! Here's what I found — if this doesn't fully solve it, I'll loop in a specialist right away.";
+}
+
+function fill(text){
+  document.getElementById('taskInput').value = text;
+}
+
+function submitTask(){
+  const input = document.getElementById('taskInput');
+  const task = input.value.trim();
+  if(!task) return;
+  const agentKey = route(task);
+  const output = runAgent(agentKey, task);
+  const agentName = agents.find(a=>a.key===agentKey).name;
+
+  const log = document.getElementById('log');
+  const entry = document.createElement('div');
+  entry.className='entry';
+  entry.innerHTML = `
+    <div class="meta"><span>Task received</span><span class="route">→ ${agentName}</span></div>
+    <div class="out">${output}</div>
+  `;
+  log.prepend(entry);
+  input.value='';
+}
+
+document.getElementById('taskInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter') submitTask();
+});
+</script>
+
+</body>
+</html>
