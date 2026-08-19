@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Astra AI Workforce — Multi-Agent Orchestrator</title>
+<style>
+  :root {
+    --navy: #0b1f3a;
+    --navy-light: #142c52;
+    --orange: #ff7a1a;
+    --orange-light: #ff9a4d;
+    --grey: #8fa0bd;
+    --bg: #0a1830;
+    --card: #101f3d;
+    --success: #2ecc71;
+    --danger: #ff5a5a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, var(--bg) 0%, #071023 100%);
+    color: #e6ecf7;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--navy);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--orange);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: 0.5px;
+  }
+  header h1 span { color: var(--orange); }
+  .badge {
+    background: var(--orange);
+    color: var(--navy);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--navy-light);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid var(--orange);
+  }
+  .stat-card .value { font-size: 32px; font-weight: 700; color: var(--orange-light); }
+  .stat-card .label { font-size: 13px; color: var(--grey); margin-top: 4px; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--navy-light);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .panel h2 {
+    margin-top: 0;
+    font-size: 16px;
+    color: var(--orange-light);
+    border-bottom: 1px solid var(--navy-light);
+    padding-bottom: 12px;
+  }
+
+  .agent-list { display: flex; flex-direction: column; gap: 10px; }
+  .agent-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--navy-light);
+    padding: 12px 16px;
+    border-radius: 8px;
+  }
+  .agent-item .name { font-weight: 600; font-size: 14px; }
+  .agent-item .role { font-size: 12px; color: var(--grey); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+  form { display: flex; flex-direction: column; gap: 10px; }
+  select, input, textarea {
+    background: var(--navy-light);
+    border: 1px solid #24345c;
+    color: #e6ecf7;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  button {
+    background: var(--orange);
+    color: var(--navy);
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button:hover { background: var(--orange-light); }
+
+  .chat-log {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+  }
+  .msg { padding: 10px 14px; border-radius: 10px; font-size: 14px; max-width: 85%; }
+  .msg.customer { background: var(--navy-light); align-self: flex-end; }
+  .msg.agent { background: rgba(255,122,26,0.12); border: 1px solid rgba(255,122,26,0.3); align-self: flex-start; }
+  .msg .meta { font-size: 11px; color: var(--grey); margin-top: 4px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--navy-light); }
+  th { color: var(--grey); font-weight: 600; }
+  .status-pill {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(46,204,113,0.15);
+    color: var(--success);
+  }
+  .empty { color: var(--grey); font-size: 13px; padding: 12px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Astra<span>AI</span> Workforce Platform</h1>
+  <span class="badge">MULTI-AGENT ORCHESTRATOR</span>
+</header>
+
+<main>
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card"><div class="value" id="stat-leads">—</div><div class="label">Total Leads</div></div>
+    <div class="stat-card"><div class="value" id="stat-conversations">—</div><div class="label">Conversations</div></div>
+    <div class="stat-card"><div class="value" id="stat-tasks">—</div><div class="label">Total Tasks</div></div>
+    <div class="stat-card"><div class="value" id="stat-pending">—</div><div class="label">Pending Tasks</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="panel">
+        <h2>Live Chat — Test the Orchestrator</h2>
+        <div class="chat-log" id="chat-log">
+          <div class="empty">Send a message below to see the orchestrator route it to an agent.</div>
+        </div>
+        <form id="chat-form">
+          <div style="display:flex; gap:10px;">
+            <select id="niche">
+              <option value="roofing">Roofing</option>
+              <option value="dental">Dental</option>
+              <option value="real_estate">Real Estate</option>
+              <option value="solar">Solar</option>
+              <option value="general">General</option>
+            </select>
+            <input id="business_id" placeholder="business_id (e.g. demo-biz-1)" value="demo-biz-1" />
+          </div>
+          <textarea id="message" placeholder="e.g. Hi, I need someone to look at my roof after last night's storm"></textarea>
+          <button type="submit">Send to Orchestrator</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Recent Leads</h2>
+        <table id="leads-table">
+          <thead><tr><th>Name</th><th>Niche</th><th>Status</th><th>Created</th></tr></thead>
+          <tbody><tr><td colspan="4" class="empty">No leads yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Active Agents</h2>
+        <div class="agent-list" id="agent-list">
+          <div class="empty">Loading agents…</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Recent Tasks</h2>
+        <table id="tasks-table">
+          <thead><tr><th>Agent</th><th>Action</th><th>Status</th></tr></thead>
+          <tbody><tr><td colspan="3" class="empty">No tasks yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const API_BASE = ""; // same-origin; change to full backend URL if hosted separately
+
+async function loadStats() {
+  try {
+    const r = await fetch(`${API_BASE}/api/stats`);
+    const s = await r.json();
+    document.getElementById("stat-leads").textContent = s.total_leads;
+    document.getElementById("stat-conversations").textContent = s.total_conversations;
+    document.getElementById("stat-tasks").textContent = s.total_tasks;
+    document.getElementById("stat-pending").textContent = s.pending_tasks;
+  } catch (e) { console.error("stats failed", e); }
+}
+
+async function loadAgents() {
+  try {
+    const r = await fetch(`${API_BASE}/api/agents`);
+    const data = await r.json();
+    const list = document.getElementById("agent-list");
+    list.innerHTML = "";
+    data.agents.forEach(a => {
+      const div = document.createElement("div");
+      div.className = "agent-item";
+      div.innerHTML = `
+        <div>
+          <div class="name">${a.name.replace(/_/g," ")}</div>
+          <div class="role">${a.role}</div>
+        </div>
+        <div class="dot"></div>`;
+      list.appendChild(div);
+    });
+  } catch (e) { console.error("agents failed", e); }
+}
+
+async function loadLeads() {
+  try {
+    const r = await fetch(`${API_BASE}/api/leads`);
+    const leads = await r.json();
+    const tbody = document.querySelector("#leads-table tbody");
+    if (!leads.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">No leads yet</td></tr>'; return; }
+    tbody.innerHTML = leads.slice(0, 8).map(l => `
+      <tr>
+        <td>${l.customer_name || "—"}</td>
+        <td>${l.niche}</td>
+        <td><span class="status-pill">${l.status}</span></td>
+        <td>${new Date(l.created_at).toLocaleString()}</td>
+      </tr>`).join("");
+  } catch (e) { console.error("leads failed", e); }
+}
+
+async function loadTasks() {
+  try {
+    const r = await fetch(`${API_BASE}/api/tasks`);
+    const tasks = await r.json();
+    const tbody = document.querySelector("#tasks-table tbody");
+    if (!tasks.length) { tbody.innerHTML = '<tr><td colspan="3" class="empty">No tasks yet</td></tr>'; return; }
+    tbody.innerHTML = tasks.slice(0, 8).map(t => `
+      <tr>
+        <td>${t.agent_name.replace(/_/g," ")}</td>
+        <td>${t.description || "—"}</td>
+        <td><span class="status-pill">${t.status}</span></td>
+      </tr>`).join("");
+  } catch (e) { console.error("tasks failed", e); }
+}
+
+function appendMsg(role, text, meta) {
+  const log = document.getElementById("chat-log");
+  if (log.querySelector(".empty")) log.innerHTML = "";
+  const div = document.createElement("div");
+  div.className = `msg ${role}`;
+  div.innerHTML = `${text}<div class="meta">${meta || ""}</div>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+document.getElementById("chat-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const message = document.getElementById("message").value.trim();
+  const niche = document.getElementById("niche").value;
+  const business_id = document.getElementById("business_id").value.trim() || "demo-biz-1";
+  if (!message) return;
+
+  appendMsg("customer", message, "You");
+  document.getElementById("message").value = "";
+
+  try {
+    const r = await fetch(`${API_BASE}/api/orchestrate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ business_id, niche, message })
+    });
+    const data = await r.json();
+    appendMsg("agent", data.reply, `${data.routed_to_agent.replace(/_/g," ")} · intent: ${data.intent}`);
+    loadStats(); loadLeads(); loadTasks();
+  } catch (err) {
+    appendMsg("agent", "⚠️ Could not reach the orchestrator backend.", "error");
+  }
+});
+
+loadStats(); loadAgents(); loadLeads(); loadTasks();
+setInterval(() => { loadStats(); loadLeads(); loadTasks(); }, 8000);
+</script>
+
+</body>
+</html>
